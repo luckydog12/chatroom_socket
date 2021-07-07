@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChatRoom</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+  <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    #chatroom {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="userLogin" class="row">
+      <div class="col-md-12">
+        <p id="loginError"></p>
+        <form id="userForm">
+          <div class="form-group">
+            <input class="form-control" id="username" placeholder="Enter Username">
+            <input type="submit" class="btn btn-primary" value="Login">
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="chatroom" class="row">
+      <div class="col-md-4">
+        <div class="jumbotron">
+          <h1>Users</h1>
+          <ul class="list-group" id="users">
+
+          </ul>
+        </div>
+      </div>
+      <div class="col-md-8">
+        <div id="chat" class="chat">
+          
+        </div>
+        <form id="messageForm">
+          <div class="form-group">
+            <textarea id="message" class="form-control" placeholder="Enter Message"></textarea>
+            <input type="submit" class="btn btn-primary" value="ENTER">
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <script>
+    $(function() {
+      const socket = io.connect()
+      const $loginError = $('#loginError')
+      const $userLogin = $('#userLogin')
+      const $userForm = $('#userForm')
+      const $username = $('#username')
+      const $chatroom = $('#chatroom')
+      const $users = $('#users')
+      const $messageForm = $('#messageForm')
+      const $message = $('#message')
+      const $chat = $('#chat')
+
+      $userForm.submit(function(e) {
+        e.preventDefault()
+        socket.emit('new user', $username.val(), function(data) {
+          if (data) {
+            $userLogin.hide()
+            $chatroom.show()
+          } else {
+            $loginError.html('<span>The username is already taken.</span>')
+          }
+        })
+        $username.val('')
+      })
+
+      $messageForm.submit(function(e) {
+        e.preventDefault() //阻止刷新
+        socket.emit('send message', $message.val())
+        $message.val('')
+      })
+
+      socket.on('new message', function(data) {
+        $chat.append('<div><strong>' + data.user + '</strong>:  ' + data.msg + '</div>')
+      })
+
+      socket.on('get users', function(data) {
+        let allUsers = ''
+        for (i = 0; i < data.length; i++) {
+          allUsers += '<li class = "list-group-item">' + data[i] + '</li>'
+        }
+        $users.html(allUsers)
+      })
+    })
+  </script>
+</body>
+</html>
